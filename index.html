@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Danh sách kèo</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Lưu kèo</h1>
+
+      <form id="todoForm" class="input-group">
+        <input type="text" id="link" placeholder="Link kèo" required />
+        <textarea
+          id="notes"
+          placeholder="Link telegram, discord, X ..."
+          required
+        ></textarea>
+
+        <div class="datetime-wrapper">
+          <input type="datetime-local" id="datetime" required />
+        </div>
+
+        <select id="blockchain">
+          <option value="">Select blockchain</option>
+          <option
+            value="BTC"
+            data-logo="https://cryptologos.cc/logos/bitcoin-btc-logo.svg"
+          >
+            Bitcoin (BTC)
+          </option>
+          <option
+            value="ETH"
+            data-logo="https://cryptologos.cc/logos/ethereum-eth-logo.svg"
+          >
+            Ethereum (ETH)
+          </option>
+          <option
+            value="USDT"
+            data-logo="https://cryptologos.cc/logos/tether-usdt-logo.svg"
+          >
+            Tether (USDT)
+          </option>
+          <option
+            value="BNB"
+            data-logo="https://cryptologos.cc/logos/bnb-bnb-logo.svg"
+          >
+            BNB (BNB)
+          </option>
+          <option
+            value="ARB"
+            data-logo="https://cryptologos.cc/logos/arbitrum-arb-logo.svg"
+          >
+            Arbitrum (Arb)
+          </option>
+
+          <option
+            value="USDC"
+            data-logo="https://cryptologos.cc/logos/usd-coin-usdc-logo.svg"
+          >
+            USD Coin (USDC)
+          </option>
+          <option
+            value="SOL"
+            data-logo="https://cryptologos.cc/logos/solana-sol-logo.svg"
+          >
+            Solana (SOL)
+          </option>
+          <option
+            value="TRX"
+            data-logo="https://cryptologos.cc/logos/tron-trx-logo.svg"
+          >
+            TRON (TRX)
+          </option>
+          <option
+            value="MATIC"
+            data-logo="https://cryptologos.cc/logos/polygon-matic-logo.svg"
+          >
+            Polygon (MATIC)
+          </option>
+          <option
+            value="TEST NET"
+            data-logo="https://gd-hbimg.huaban.com/7bdda28d29c1813d0613bd62fa0fffafbd3589ab2a494-FSKAzV_fw658webp"
+          >
+            TEST NET
+          </option>
+
+          <option
+            value="ETC"
+            data-logo="https://cryptologos.cc/logos/ethereum-classic-etc-logo.svg"
+          >
+            Ethereum Classic (ETC)
+          </option>
+        </select>
+
+        <select id="platform">
+          <option value="">Select platform</option>
+          <option value="Taskon">Taskon</option>
+          <option value="Galxe">Galxe</option>
+          <option value="Questn">Questn</option>
+          <option value="Intract">Intract.io</option>
+          <option value="Kèo ngoài">Kèo ngoài</option>
+        </select>
+
+        <input
+          type="number"
+          id="amount"
+          placeholder="Enter amount (USD)"
+          step="0.01"
+          required
+        />
+
+        <button type="submit">Thêm</button>
+      </form>
+
+      <div id="todoList" class="todo-list"></div>
+    </div>
+
+    <script>
+      const todoForm = document.getElementById("todoForm");
+      const todoList = document.getElementById("todoList");
+      const datetimeInput = document.getElementById("datetime");
+      let todos = JSON.parse(localStorage.getItem("cryptoTodos")) || [];
+
+      // Enhance select options with logos
+      const blockchainSelect = document.getElementById("blockchain");
+      Array.from(blockchainSelect.options).forEach((option) => {
+        if (option.dataset.logo) {
+          option.innerHTML = `
+                    <div class="select-option">
+                        <img src="${option.dataset.logo}" alt="${option.text} logo">
+                        ${option.text}
+                    </div>
+                `;
+        }
+      });
+
+      function saveTodos() {
+        localStorage.setItem("cryptoTodos", JSON.stringify(todos));
+      }
+
+      function formatDateTime(dateTimeString) {
+        const dateObj = new Date(dateTimeString);
+        return dateObj.toLocaleString("vi-VN", {
+          month: "numeric",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+          hour12: false,
+        });
+      }
+
+      function getBlockchainLogo(value) {
+        const option = Array.from(blockchainSelect.options).find(
+          (opt) => opt.value === value
+        );
+        return option ? option.dataset.logo : "";
+      }
+
+      function createTodoElement(todo, index) {
+        const todoItem = document.createElement("div");
+        todoItem.className = `todo-item ${todo.completed ? "completed" : ""}`;
+        todoItem.innerHTML = `
+                <div class="todo-content">
+                    <a href="${todo.link}" class="todo-link" target="_blank">${
+          todo.link
+        }</a>
+                    <div class="todo-meta">
+                        <span class="tag">
+                            <img src="${getBlockchainLogo(
+                              todo.blockchain
+                            )}" alt="${todo.blockchain} logo">
+                            ${todo.blockchain}
+                        </span>
+                        <span class="tag tag-platform" data-platform="${
+                          todo.platform
+                        }">${todo.platform}</span>
+                        <span class="amount">$${parseFloat(todo.amount).toFixed(
+                          2
+                        )}</span>
+                        <span class="editable-datetime" data-index="${index}">${formatDateTime(
+          todo.datetime
+        )}</span>
+                    </div>
+                </div>
+                <button class="done-btn" title="Mark as ${
+                  todo.completed ? "not done" : "done"
+                }">${todo.completed ? "Đã làm ↩️" : "✅"}</button>
+                <button class="delete-btn" title="Delete">❌</button>
+            `;
+
+        const doneBtn = todoItem.querySelector(".done-btn");
+        doneBtn.addEventListener("click", () => {
+          todo.completed = !todo.completed;
+          saveTodos();
+          renderTodos();
+        });
+
+        const deleteBtn = todoItem.querySelector(".delete-btn");
+        deleteBtn.addEventListener("click", () => {
+          todos = todos.filter((t) => t !== todo);
+          saveTodos();
+          renderTodos();
+        });
+
+        const editableDatetime = todoItem.querySelector(".editable-datetime");
+        editableDatetime.addEventListener("click", () => {
+          const newDatetime = prompt(
+            "Edit date and time (YYYY-MM-DDTHH:MM):",
+            todo.datetime
+          );
+          if (newDatetime && isValidDate(newDatetime)) {
+            todo.datetime = newDatetime;
+            saveTodos();
+            renderTodos();
+          } else if (newDatetime) {
+            alert("Invalid date format. Please use YYYY-MM-DDTHH:MM");
+          }
+        });
+
+        return todoItem;
+      }
+
+      function isValidDate(dateString) {
+        const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+        return regex.test(dateString) && !isNaN(new Date(dateString).getTime());
+      }
+
+      function renderTodos() {
+        todoList.innerHTML = "";
+        todos.forEach((todo, index) => {
+          todoList.appendChild(createTodoElement(todo, index));
+        });
+      }
+
+      todoForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const newTodo = {
+          link: todoForm.link.value,
+          notes: todoForm.notes.value,
+          datetime: todoForm.datetime.value,
+          blockchain: todoForm.blockchain.value,
+          platform: todoForm.platform.value,
+          amount: todoForm.amount.value,
+          completed: false,
+        };
+
+        todos.push(newTodo);
+        saveTodos();
+        renderTodos();
+        todoForm.reset();
+      });
+
+      renderTodos();
+    </script>
+  </body>
+</html>

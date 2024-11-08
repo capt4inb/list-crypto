@@ -197,6 +197,18 @@
       let currentDate = new Date();
       let todos = JSON.parse(localStorage.getItem("cryptoTodos")) || [];
 
+      const blockchainSelect = document.getElementById("blockchain");
+      Array.from(blockchainSelect.options).forEach((option) => {
+        if (option.dataset.logo) {
+          option.innerHTML = `
+                    <div class="select-option">
+                        <img src="${option.dataset.logo}" alt="${option.text} logo">
+                        ${option.text}
+                    </div>
+                `;
+        }
+      });
+
       // Calendar functions
       function generateCalendar(date) {
         const year = date.getFullYear();
@@ -308,6 +320,13 @@
         }
       });
 
+      function getBlockchainLogo(value) {
+        const option = Array.from(blockchainSelect.options).find(
+          (opt) => opt.value === value
+        );
+        return option ? option.dataset.logo : "";
+      }
+
       function createTodoElement(todo) {
         const todoItem = document.createElement("div");
         todoItem.className = `todo-item ${todo.completed ? "completed" : ""}`;
@@ -322,12 +341,20 @@
                       : ""
                   }
                   <div class="todo-meta">
-                      <span class="tag">${todo.blockchain}</span>
-                      <span class="tag">${todo.platform}</span>
-                      <span class="amount">$${parseFloat(todo.amount).toFixed(
-                        2
-                      )}</span>
-                      <span>${todo.date} ${todo.time}</span>
+                      <span class="tag">
+                            <img src="${getBlockchainLogo(
+                              todo.blockchain
+                            )}" alt="${todo.blockchain} logo">
+                            ${todo.blockchain}
+                        </span>
+                      <span class="tag tag-platform" data-platform="${
+                        todo.platform
+                      }">${todo.platform}</span>
+                      <span class="todo-datetime">${todo.date} ${
+          todo.time
+        }</span><span class="amount">$${parseFloat(todo.amount).toFixed(
+          2
+        )}</span>
                   </div>
               </div>
               <button class="done-btn" title="Mark as ${

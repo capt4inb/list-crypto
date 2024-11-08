@@ -270,6 +270,10 @@ button:hover {
   word-break: break-all;
 }
 
+.todo-datetime {
+  font-weight: bold;
+}
+
 .todo-meta {
   display: flex;
   align-items: center;
@@ -306,7 +310,8 @@ button:hover {
 }
 
 .tag-platform {
-  color: #ffffff;
+  color: #fff;
+  background-color: #fff;
   font-weight: bold;
 }
 

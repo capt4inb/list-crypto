@@ -18,8 +18,70 @@
           required
         ></textarea>
 
-        <div class="datetime-wrapper">
-          <input type="datetime-local" id="datetime" required />
+        <div class="datetime-picker">
+          <div class="datetime-picker-header">
+            <div class="datetime-picker-title">Schedule task</div>
+            <button type="button" class="close-btn">×</button>
+          </div>
+          <div class="datetime-picker-description">
+            Choose a day and time in the future for your task.
+          </div>
+
+          <div class="date-select" id="dateSelect">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span id="selectedDate">Select a date</span>
+          </div>
+
+          <div class="time-select" id="timeSelect">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="selectedTime">Select time</span>
+          </div>
+
+          <div class="calendar" id="calendar">
+            <div class="calendar-header">
+              <button type="button" class="calendar-nav" id="prevMonth">
+                ←
+              </button>
+              <div id="currentMonth">November 2023</div>
+              <button type="button" class="calendar-nav" id="nextMonth">
+                →
+              </button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <button type="button" class="clear-btn">Clear</button>
+          </div>
+
+          <div class="time-dropdown" id="timeDropdown">
+            <div class="time-dropdown-header">
+              <span id="selectedTimeHeader">12:30 PM</span>
+              <button type="button" class="close-btn" id="closeTimeDropdown">
+                ×
+              </button>
+            </div>
+            <div class="time-options" id="timeOptions"></div>
+          </div>
         </div>
 
         <select id="blockchain">
@@ -120,76 +182,159 @@
     <script>
       const todoForm = document.getElementById("todoForm");
       const todoList = document.getElementById("todoList");
-      const datetimeInput = document.getElementById("datetime");
+      const dateSelect = document.getElementById("dateSelect");
+      const timeSelect = document.getElementById("timeSelect");
+      const calendar = document.getElementById("calendar");
+      const timeDropdown = document.getElementById("timeDropdown");
+      const selectedDate = document.getElementById("selectedDate");
+      const selectedTime = document.getElementById("selectedTime");
+      const selectedTimeHeader = document.getElementById("selectedTimeHeader");
+      const calendarGrid = document.getElementById("calendarGrid");
+      const currentMonthDiv = document.getElementById("currentMonth");
+      const prevMonthBtn = document.getElementById("prevMonth");
+      const nextMonthBtn = document.getElementById("nextMonth");
+      const timeOptions = document.getElementById("timeOptions");
+      let currentDate = new Date();
       let todos = JSON.parse(localStorage.getItem("cryptoTodos")) || [];
 
-      // Enhance select options with logos
-      const blockchainSelect = document.getElementById("blockchain");
-      Array.from(blockchainSelect.options).forEach((option) => {
-        if (option.dataset.logo) {
-          option.innerHTML = `
-                    <div class="select-option">
-                        <img src="${option.dataset.logo}" alt="${option.text} logo">
-                        ${option.text}
-                    </div>
-                `;
+      // Calendar functions
+      function generateCalendar(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startingDay = firstDay.getDay();
+        const monthLength = lastDay.getDate();
+
+        currentMonthDiv.textContent = date.toLocaleString("default", {
+          month: "long",
+          year: "numeric",
+        });
+        calendarGrid.innerHTML = "";
+
+        // Add day headers
+        ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].forEach((day) => {
+          const dayHeader = document.createElement("div");
+          dayHeader.textContent = day;
+          dayHeader.className = "calendar-day-header";
+          calendarGrid.appendChild(dayHeader);
+        });
+
+        // Add blank days
+        for (let i = 0; i < startingDay; i++) {
+          calendarGrid.appendChild(document.createElement("div"));
+        }
+
+        // Add days
+        for (let day = 1; day <= monthLength; day++) {
+          const dayDiv = document.createElement("div");
+          dayDiv.textContent = day;
+          dayDiv.className = "calendar-day";
+
+          const currentDay = new Date(year, month, day);
+          if (currentDay.toDateString() === new Date().toDateString()) {
+            dayDiv.classList.add("today");
+          }
+
+          dayDiv.addEventListener("click", () => {
+            const selected = calendarGrid.querySelector(".selected");
+            if (selected) selected.classList.remove("selected");
+            dayDiv.classList.add("selected");
+
+            selectedDate.textContent = currentDay.toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            });
+            calendar.classList.remove("show");
+          });
+
+          calendarGrid.appendChild(dayDiv);
+        }
+      }
+
+      // Time picker functions
+      function generateTimeOptions() {
+        timeOptions.innerHTML = "";
+        for (let hour = 0; hour < 24; hour++) {
+          for (let minute = 0; minute < 60; minute += 30) {
+            const date = new Date();
+            date.setHours(hour, minute, 0);
+            const timeString = date.toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            });
+
+            const option = document.createElement("div");
+            option.className = "time-option";
+            option.textContent = timeString;
+            option.addEventListener("click", () => {
+              selectedTime.textContent = timeString;
+              selectedTimeHeader.textContent = timeString;
+              timeDropdown.classList.remove("show");
+            });
+
+            timeOptions.appendChild(option);
+          }
+        }
+      }
+
+      // Event listeners
+      dateSelect.addEventListener("click", () => {
+        calendar.classList.toggle("show");
+        timeDropdown.classList.remove("show");
+      });
+
+      timeSelect.addEventListener("click", () => {
+        timeDropdown.classList.toggle("show");
+        calendar.classList.remove("show");
+      });
+
+      prevMonthBtn.addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        generateCalendar(currentDate);
+      });
+
+      nextMonthBtn.addEventListener("click", () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        generateCalendar(currentDate);
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".datetime-picker")) {
+          calendar.classList.remove("show");
+          timeDropdown.classList.remove("show");
         }
       });
 
-      function saveTodos() {
-        localStorage.setItem("cryptoTodos", JSON.stringify(todos));
-      }
-
-      function formatDateTime(dateTimeString) {
-        const dateObj = new Date(dateTimeString);
-        return dateObj.toLocaleString("vi-VN", {
-          month: "numeric",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-          hour12: false,
-        });
-      }
-
-      function getBlockchainLogo(value) {
-        const option = Array.from(blockchainSelect.options).find(
-          (opt) => opt.value === value
-        );
-        return option ? option.dataset.logo : "";
-      }
-
-      function createTodoElement(todo, index) {
+      function createTodoElement(todo) {
         const todoItem = document.createElement("div");
         todoItem.className = `todo-item ${todo.completed ? "completed" : ""}`;
         todoItem.innerHTML = `
-                <div class="todo-content">
-                    <a href="${todo.link}" class="todo-link" target="_blank">${
+              <div class="todo-content">
+                  <a href="${todo.link}" class="todo-link" target="_blank">${
           todo.link
         }</a>
-                    <div class="todo-meta">
-                        <span class="tag">
-                            <img src="${getBlockchainLogo(
-                              todo.blockchain
-                            )}" alt="${todo.blockchain} logo">
-                            ${todo.blockchain}
-                        </span>
-                        <span class="tag tag-platform" data-platform="${
-                          todo.platform
-                        }">${todo.platform}</span>
-                        <span class="amount">$${parseFloat(todo.amount).toFixed(
-                          2
-                        )}</span>
-                        <span class="editable-datetime" data-index="${index}">${formatDateTime(
-          todo.datetime
-        )}</span>
-                    </div>
-                </div>
-                <button class="done-btn" title="Mark as ${
-                  todo.completed ? "not done" : "done"
-                }">${todo.completed ? "Đã làm ↩️" : "✅"}</button>
-                <button class="delete-btn" title="Delete">❌</button>
-            `;
+                  ${
+                    todo.notes
+                      ? `<div class="todo-notes">${todo.notes}</div>`
+                      : ""
+                  }
+                  <div class="todo-meta">
+                      <span class="tag">${todo.blockchain}</span>
+                      <span class="tag">${todo.platform}</span>
+                      <span class="amount">$${parseFloat(todo.amount).toFixed(
+                        2
+                      )}</span>
+                      <span>${todo.date} ${todo.time}</span>
+                  </div>
+              </div>
+              <button class="done-btn" title="Mark as ${
+                todo.completed ? "not done" : "done"
+              }">${todo.completed ? "↩️" : "✅"}</button>
+              <button class="delete-btn" title="Delete">🗑️</button>
+          `;
 
         const doneBtn = todoItem.querySelector(".done-btn");
         doneBtn.addEventListener("click", () => {
@@ -205,33 +350,17 @@
           renderTodos();
         });
 
-        const editableDatetime = todoItem.querySelector(".editable-datetime");
-        editableDatetime.addEventListener("click", () => {
-          const newDatetime = prompt(
-            "Edit date and time (YYYY-MM-DDTHH:MM):",
-            todo.datetime
-          );
-          if (newDatetime && isValidDate(newDatetime)) {
-            todo.datetime = newDatetime;
-            saveTodos();
-            renderTodos();
-          } else if (newDatetime) {
-            alert("Invalid date format. Please use YYYY-MM-DDTHH:MM");
-          }
-        });
-
         return todoItem;
       }
 
-      function isValidDate(dateString) {
-        const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
-        return regex.test(dateString) && !isNaN(new Date(dateString).getTime());
+      function saveTodos() {
+        localStorage.setItem("cryptoTodos", JSON.stringify(todos));
       }
 
       function renderTodos() {
         todoList.innerHTML = "";
-        todos.forEach((todo, index) => {
-          todoList.appendChild(createTodoElement(todo, index));
+        todos.forEach((todo) => {
+          todoList.appendChild(createTodoElement(todo));
         });
       }
 
@@ -241,7 +370,8 @@
         const newTodo = {
           link: todoForm.link.value,
           notes: todoForm.notes.value,
-          datetime: todoForm.datetime.value,
+          date: selectedDate.textContent,
+          time: selectedTime.textContent,
           blockchain: todoForm.blockchain.value,
           platform: todoForm.platform.value,
           amount: todoForm.amount.value,
@@ -252,8 +382,14 @@
         saveTodos();
         renderTodos();
         todoForm.reset();
+        selectedDate.textContent = "Select a date";
+        selectedTime.textContent = "Select time";
+        selectedTimeHeader.textContent = "12:30 PM";
       });
 
+      // Initialize
+      generateCalendar(currentDate);
+      generateTimeOptions();
       renderTodos();
     </script>
   </body>

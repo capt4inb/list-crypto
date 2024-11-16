@@ -348,6 +348,10 @@ button:hover {
   color: #ef4444;
 }
 
+.edit-btn {
+  width: 40px;
+}
+
 .done-btn {
   color: #10b981;
 }

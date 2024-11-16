@@ -357,11 +357,22 @@
         )}</span>
                   </div>
               </div>
+              <button class="edit-btn" title="Edit notes">✏️</button>
               <button class="done-btn" title="Mark as ${
                 todo.completed ? "not done" : "done"
               }">${todo.completed ? "↩️" : "✅"}</button>
               <button class="delete-btn" title="Delete">🗑️</button>
           `;
+
+        const editBtn = todoItem.querySelector(".edit-btn");
+        editBtn.addEventListener("click", () => {
+          const newNotes = prompt("Edit your notes:", todo.notes);
+          if (newNotes !== null) {
+            todo.notes = newNotes;
+            saveTodos();
+            renderTodos();
+          }
+        });
 
         const doneBtn = todoItem.querySelector(".done-btn");
         doneBtn.addEventListener("click", () => {
